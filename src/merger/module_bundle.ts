@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-call */
 import { DeclarationReflection, ProjectReflection } from "typedoc";
 import { removeTagFromCommentsOf } from "./utils";
 
@@ -5,7 +6,7 @@ import { removeTagFromCommentsOf } from "./utils";
  * Name of the comment tag that can be used to mark a module as the target module within the bundle.
  * The target module is the one into which all the modules of the bundle are merged.
  */
-const targetModuleCommentTagName = "mergeTarget";
+const targetModuleCommentTagName = "@mergeTarget";
 
 /**
  * Class representing a group of modules.
@@ -71,10 +72,14 @@ export class ModuleBundle {
     private getTargetModule(): DeclarationReflection {
         // 1. search for the first module which is marked with a specific tag
         const firstModuleWithTargetTag = this.modules.find(
-            (module) =>
-                module.comment?.tags.findIndex(
-                    (tag) => tag.tagName.toLowerCase() === targetModuleCommentTagName.toLowerCase(),
-                ) !== -1,
+            (module) => {
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+                const coments = module.comment === undefined ? { blockTags: [] } : module.comment;
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+                return coments.blockTags.filter(
+                    (tagObj: { tag: string; }) => tagObj.tag.toLowerCase() === targetModuleCommentTagName.toLowerCase()
+                ).length > 0
+            }
         );
 
         if (firstModuleWithTargetTag) {
@@ -82,7 +87,7 @@ export class ModuleBundle {
         }
 
         // 2. search for the first module with a comment
-        const firstModuleWithComment = this.modules.find((module) => module.comment?.shortText);
+        const firstModuleWithComment = this.modules.find((module) => module.comment?.summary);
 
         if (firstModuleWithComment) {
             return firstModuleWithComment;
